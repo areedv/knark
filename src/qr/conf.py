@@ -15,6 +15,9 @@ class KnarkConfig:
         """
 
         return Schema({
+            'client': {
+                      'id': str
+                      },
             'mqtt': {
                 'host': str,
                 'port': int,

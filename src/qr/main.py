@@ -1,18 +1,23 @@
 """
 Client interface to :class: KnarkConfig class
 """
+
 import argparse
-import paho.mqtt.client as mqtt
 import time
+
+import paho.mqtt.client as mqtt
 from conf import KnarkConfig
 from cons import DEFAULT_CONFIG, DEFAULT_CONFIG_FILE
+
 from qr import KnarkQrDecode
+
 
 def on_message(client, userdata, message):
     print("message received ", str(message.payload.decode("utf-8")))
     print("message topic = ", message.topic)
     print("message qos ", message.qos)
     print("message retain flag ", message.retain)
+
 
 def process_cmdargs():
     """
@@ -24,11 +29,13 @@ def process_cmdargs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-            '-c', '--config-file',
-            default=DEFAULT_CONFIG_FILE,
-            help="Path to configuration file (default: '%(default)s')"
+        "-c",
+        "--config-file",
+        default=DEFAULT_CONFIG_FILE,
+        help="Path to configuration file (default: '%(default)s')",
     )
     return parser.parse_args()
+
 
 def main():
     """
@@ -36,25 +43,25 @@ def main():
     """
     args = process_cmdargs()
     conf = KnarkConfig(args.config_file)
-    
+
     client = mqtt.Client(conf.of.client.id)
     client.on_message = on_message
     client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     client.loop_start()
-    client.subscribe('hnikt/test')
-    client.publish('hnikt/test', 'yes')
+    client.subscribe("hnikt/test")
+    client.publish("hnikt/test", "yes")
     time.sleep(2)
     client.loop_stop()
 
-    print('DEFAULT_CONFIG: '+ str(DEFAULT_CONFIG))
-    print('mqtt_host: '+ str(conf.of.mqtt.host))
-    print('mqtt_port: '+ str(conf.of.mqtt.port))
-    
+    print("DEFAULT_CONFIG: " + str(DEFAULT_CONFIG))
+    print("mqtt_host: " + str(conf.of.mqtt.host))
+    print("mqtt_port: " + str(conf.of.mqtt.port))
+
     decode = KnarkQrDecode("qr-code.png")
 
-    print("QR data: "+ str(decode.qr_data))
-    print("QR type: "+ str(decode.qr_orientation))
+    print("QR data: " + str(decode.qr_data))
+    print("QR type: " + str(decode.qr_orientation))
+
 
 if __name__ == "__main__":
     main()
-

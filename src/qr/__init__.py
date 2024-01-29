@@ -1,10 +1,7 @@
 """
 Package providing KNARK components
 """
-from .cons import (
-        DEFAULT_CONFIG_FILE, DEFAULT_CONFIG
-)
-from .conf import (
-        KnarkConfig
-)
 
+from .conf import KnarkConfig
+from .cons import DEFAULT_CONFIG, DEFAULT_CONFIG_FILE
+from .qr import KnarkQrDecode

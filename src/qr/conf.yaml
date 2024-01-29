@@ -1,0 +1,6 @@
+mqtt:
+  host: localhost
+  port: 1884
+  username: are
+  password: test123
+

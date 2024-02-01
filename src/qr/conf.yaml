@@ -1,5 +1,6 @@
 client:
   id: knark_mvp
+  topic: knark/qr
 mqtt:
   host: localhost
   port: 1884

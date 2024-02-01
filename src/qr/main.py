@@ -43,21 +43,21 @@ def main():
     """
     args = process_cmdargs()
     conf = KnarkConfig(args.config_file)
+    decode = KnarkQrDecode("qr-code.png")
+
 
     client = mqtt.Client(conf.of.client.id)
     client.on_message = on_message
     client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     client.loop_start()
-    client.subscribe("hnikt/test")
-    client.publish("hnikt/test", "yes")
+    client.subscribe(conf.of.client.topic)
+    client.publish(conf.of.client.topic, decode.qr_data)
     time.sleep(2)
     client.loop_stop()
 
     print("DEFAULT_CONFIG: " + str(DEFAULT_CONFIG))
     print("mqtt_host: " + str(conf.of.mqtt.host))
     print("mqtt_port: " + str(conf.of.mqtt.port))
-
-    decode = KnarkQrDecode("qr-code.png")
 
     print("QR data: " + str(decode.qr_data))
     print("QR type: " + str(decode.qr_orientation))

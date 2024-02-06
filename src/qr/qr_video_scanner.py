@@ -5,9 +5,12 @@ import time
 
 import cv2
 import imutils
-from imutils.video import VideoStream
-from numpy import asarray
 from pyzbar.pyzbar import decode
+
+# from imutils.video import VideoStream
+# from numpy import asarray
+# from pylibdmtx.pylibdmtx import decode
+
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -18,12 +21,15 @@ ap.add_argument(
     default="barcodes.csv",
     help="path to output CSV file containing barcodes",
 )
+ap.add_argument(
+    "-wf", "--write-file", type=bool, default=False, help="Write data to file"
+)
 args = vars(ap.parse_args())
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
-vs = cv2.VideoCapture(2)
-# vs = VideoStream(src=2).start()
+vs = cv2.VideoCapture(0)
+# vs = VideoStream(src=0).start()
 # vs = VideoStream(usePiCamera=True).start()
 time.sleep(2.0)
 # open the output CSV file for writing and initialize the set of
@@ -35,8 +41,10 @@ found = set()
 while True:
     # grab the frame from the threaded video stream and resize it to
     # have a maximum width of 400 pixels
+    # frame = vs.read()
     ret, frame = vs.read()
-    frame = imutils.resize(frame, width=800)
+    frame = imutils.resize(frame, width=1200)
+    # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     # find the barcodes in the frame and decode each of the barcodes
     barcodes = decode(frame)
     print(str(barcodes))
@@ -59,13 +67,17 @@ while True:
         # if the barcode text is currently not in our CSV file, write
         # the timestamp + barcode to disk and update the set
         if barcodeData not in found:
-            csv.write("{},{}\n".format(datetime.datetime.now(), barcodeData))
+            csv.write(
+                "{},{},({}),\n".format(
+                    datetime.datetime.now(), barcodeData, barcodeType
+                )
+            )
             csv.flush()
             found.add(barcodeData)
 
     # show the output frame
     cv2.imshow("Barcode Scanner", frame)
-    key = cv2.waitKey(1000) & 0xFF
+    key = cv2.waitKey(200) & 0xFF
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
         break
@@ -73,4 +85,5 @@ while True:
 print("[INFO] cleaning up...")
 csv.close()
 cv2.destroyAllWindows()
-vs.stop()
+# vs.stop()
+vs.release()

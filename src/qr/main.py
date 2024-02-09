@@ -4,16 +4,17 @@ Client interface to :class: KnarkConfig class
 
 import argparse
 import time
+from queue import Queue
 
 import paho.mqtt.client as mqtt
-from PIL import Image
 from numpy import asarray
+from PIL import Image
 from pyzbar.pyzbar import decode
 
 from conf import KnarkConfig
 from cons import DEFAULT_CONFIG, DEFAULT_CONFIG_FILE
 
-#from qr import KnarkQrDecode
+# from qr import KnarkQrDecode
 
 
 def process_cmdargs():
@@ -33,6 +34,12 @@ def process_cmdargs():
     )
     return parser.parse_args()
 
+
+q = Queue()
+args = process_cmdargs()
+conf = KnarkConfig(args.config_file)
+
+
 def on_message(client, userdata, message):
 
     def qr_decode(image_file):
@@ -43,12 +50,20 @@ def on_message(client, userdata, message):
         except FileNotFoundError:
             print("Requested image file does not exist: " + image_file)
             res = list()
-        
+
         return res
-    
+
+    print("Now on_message")
+    print("Message is: " + str(message.payload.decode("utf-8")))
+    if str(message.payload.decode("utf-8")) == "OFF":
+        print(q.get())
+
+    if str(message.payload.decode("utf-8")) == "ON":
+        print(q.put("Testing"))
+
     res = qr_decode(str(message.payload.decode("utf-8")))
     for qr in res:
-        #print(qr.data)
+        # print(qr.data)
         client.publish("knark/qr", qr.data)
 
     print("message received ", str(message.payload.decode("utf-8")))
@@ -57,23 +72,19 @@ def on_message(client, userdata, message):
     print("message retain flag ", message.retain)
 
 
-
 def main():
     """
     Main entrypoint for client
     """
-    args = process_cmdargs()
-    conf = KnarkConfig(args.config_file)
-    #decode = KnarkQrDecode("qr-code.png")
-
-
+    # args = process_cmdargs()
     client = mqtt.Client(conf.of.client.id)
     client.on_message = on_message
     client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     client.loop_start()
-    client.subscribe(conf.of.client.topic)
-    client.publish(conf.of.client.topic, "qr-code.png")
-    time.sleep(2)
+    client.subscribe(conf.of.client.subscribe_root_topic)
+    client.publish(conf.of.client.publish_root_topic, "qr-code.png")
+    print(str(conf.of.client.subscribe_root_topic))
+    time.sleep(20)
     client.loop_stop()
 
     # print("DEFAULT_CONFIG: " + str(DEFAULT_CONFIG))
@@ -83,6 +94,7 @@ def main():
     # print("QR data: " + str(decode.qr_data))
     # print("QR type: " + str(decode.qr_orientation))
     #
+
 
 if __name__ == "__main__":
     main()

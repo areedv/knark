@@ -17,19 +17,22 @@ class KnarkConfig:
         :rtype: Schema
         """
 
-        return Schema({
-            'client': {
-                'id': str,
-                'topic': str,
-                "",
-            },
-            'mqtt': {
-                'host': str,
-                'port': int,
-                Optional('username', default=""): str,
-                Optional('password', default=""): str
+        return Schema(
+            {
+                "client": {
+                    "id": str,
+                    "subscribe_root_topic": str,
+                    "publish_root_topic": str,
+                    "video_stream_base_url": str,
+                },
+                "mqtt": {
+                    "host": str,
+                    "port": int,
+                    Optional("username", default=""): str,
+                    Optional("password", default=""): str,
+                },
             }
-        })
+        )
 
     @staticmethod
     def _read_config(config_file):
@@ -39,11 +42,11 @@ class KnarkConfig:
         :param str config_file: Name of configuration file
         :return str: Configuration file content
         """
-        with open(config_file, 'r') as file:
+        with open(config_file, "r") as file:
             conf = yaml.safe_load(file)
-        
+
         return conf
-    
+
     @property
     def of(self):
         """
@@ -59,14 +62,13 @@ class KnarkConfig:
             with open(config_file):
                 config = self._read_config(config_file)
         except FileNotFoundError:
-            print('File does not exist: '+ config_file)
-            sys.exit('Quitting due to missing configuration')
-        
+            print("File does not exist: " + config_file)
+            sys.exit("Quitting due to missing configuration")
+
         try:
             config = self._get_schema().validate(config)
         except SchemaError as e:
-            print('Configuration is not valid: '+ str(e))
-            sys.exit('Please fix configuration. Quitting')
+            print("Configuration is not valid: " + str(e))
+            sys.exit("Please fix configuration. Quitting")
 
         self._config = Dict(config)
-

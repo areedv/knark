@@ -12,6 +12,8 @@ from pyzbar.pyzbar import decode
 # from pylibdmtx.pylibdmtx import decode
 
 
+# This is for testing git
+
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument(

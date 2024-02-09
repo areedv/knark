@@ -1,8 +1,11 @@
-from addict import Dict
-from schema import Schema, Optional, SchemaError 
-import yaml
 import sys
+
+import yaml
+from addict import Dict
+from schema import Optional, Schema, SchemaError
+
 import cons
+
 
 class KnarkConfig:
 
@@ -17,7 +20,8 @@ class KnarkConfig:
         return Schema({
             'client': {
                 'id': str,
-                'topic': str
+                'topic': str,
+                "",
             },
             'mqtt': {
                 'host': str,

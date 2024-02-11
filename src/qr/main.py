@@ -40,6 +40,10 @@ args = process_cmdargs()
 conf = KnarkConfig(args.config_file)
 
 
+def on_log(client, userdata, level, buf):
+    print("Log: ", buf)
+
+
 def topic_stream(topic):
     sep = "/"
     levels = topic.split(sep)
@@ -64,12 +68,13 @@ def on_message(client, userdata, message):
 
         return res
 
+    payload = str(message.payload.decode("utf-8"))
     print("Now on_message")
-    print("Message is: " + str(message.payload.decode("utf-8")))
-    if str(message.payload.decode("utf-8")) == "OFF":
+    print("Message is: " + payload)
+    if payload == "OFF":
         print(q.get())
 
-    if str(message.payload.decode("utf-8")) == "ON":
+    if payload == "ON":
         print(q.put("Testing"))
 
     res = qr_decode(str(message.payload.decode("utf-8")))
@@ -89,6 +94,7 @@ def main():
     """
     # args = process_cmdargs()
     client = mqtt.Client(conf.of.client.id)
+    client.on_log = on_log
     client.on_message = on_message
     client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     client.loop_start()

@@ -88,15 +88,40 @@ def on_message(client, userdata, message):
     print("message retain flag ", message.retain)
 
 
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        client.connected_flag = True
+        print("Connected, return code=", rc)
+    else:
+        client.bad_connection_flag = True
+        print("Bad connection, return code=", rc)
+
+
 def main():
     """
     Main entrypoint for client
     """
     # args = process_cmdargs()
+    # mqtt.Client.connected_flag: bool = False
+    # mqtt.Client.bad_connection_flag=False
     client = mqtt.Client(conf.of.client.id)
+
+    setattr(client, "connected_flag", False)
+    setattr(client, "bad_connection_flag", False)
+
+    # client = mqtt.Client(conf.of.client.id)
     client.on_log = on_log
+    client.on_connect = on_connect
     client.on_message = on_message
-    client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
+    try:
+        client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
+    except:
+        print("Connection failed")
+        exit(1)
+
+    while not client.connected_flag:
+        print("Waiting for connection")
+        time.sleep(1)
     client.loop_start()
     client.subscribe(conf.of.client.subscribe_root_topic)
     client.publish(conf.of.client.publish_root_topic, "qr-code.png")

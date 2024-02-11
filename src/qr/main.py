@@ -40,6 +40,17 @@ args = process_cmdargs()
 conf = KnarkConfig(args.config_file)
 
 
+def topic_stream(topic):
+    sep = "/"
+    levels = topic.split(sep)
+    # list start index is 0, stream is the one below the top level
+    stream_level = len(levels) - 2
+    if stream_level < 0:
+        stream_level = 0
+
+    return levels[stream_level]
+
+
 def on_message(client, userdata, message):
 
     def qr_decode(image_file):

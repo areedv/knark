@@ -6,6 +6,8 @@ import argparse
 import time
 from queue import Queue
 
+import cv2
+import imutils
 import paho.mqtt.client as mqtt
 from numpy import asarray
 from PIL import Image
@@ -55,25 +57,48 @@ def topic_stream(topic):
     return levels[stream_level]
 
 
+def scanner(client, camera):
+    vs = cv2.VideoCapture(0)
+    print("stream url for scanner:" + client.streams[camera])
+    time.sleep(2.0)
+    found = set()
+
+    while camera in client.streams:
+        ret, frame = vs.read()
+        # print("Class of frame:" + str(type(frame)))
+        frame = imutils.resize(frame, width=1200)
+        barcodes = decode(frame)
+        for barcode in barcodes:
+            (x, y, w, h) = barcode.rect
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            # the barcode data is a bytes object so if we want to draw it
+            # on our output image we need to convert it to a string first
+            barcode_data = barcode.data.decode("utf-8")
+            barcode_type = barcode.type
+            # draw the barcode data and barcode type on the image
+            text = "{} ({})".format(barcode_data, barcode_type)
+            cv2.putText(
+                frame, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2
+            )
+            # if the barcode text is currently not in our CSV file, write
+            # the timestamp + barcode to disk and update the set
+            if barcode_data not in found:
+                client.publish(conf.of.client.publish_root_topic, barcode_data)
+                found.add(barcode_data)
+
+        cv2.imshow("Barcode scanner", frame)
+    cv2.destroyAllWindows()
+    vs.release()
+
+
 def on_message(client, userdata, message):
-
-    def qr_decode(image_file):
-        try:
-            with open(image_file):
-                img = asarray(Image.open(image_file))
-                res = decode(img)
-        except FileNotFoundError:
-            print("Requested image file does not exist: " + image_file)
-            res = list()
-
-        return res
 
     payload = str(message.payload.decode("utf-8"))
     camera = topic_stream(message.topic)
     stream_url = conf.of.client.video_stream_base_url + camera
     # print("Now on_message")
     # print("Message is: " + payload)
-    # print("Camera is: " + camera)
+    # prWint("Camera is: " + camera)
     if payload == "OFF":
         if camera in client.streams:
             stream = client.streams.pop(camera)
@@ -87,25 +112,15 @@ def on_message(client, userdata, message):
             client.streams[camera] = stream_url
             print("Opening stream on ", camera)
             print("Current stream(s):", client.streams)
-
-    res = qr_decode(str(message.payload.decode("utf-8")))
-    for qr in res:
-        # print(qr.data)
-        client.publish("knark/qr", qr.data)
-
-    print("message received ", str(message.payload.decode("utf-8")))
-    print("message topic = ", message.topic)
-    print("message qos ", message.qos)
-    print("message retain flag ", message.retain)
+            scanner(client, camera)
 
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         client.connected_flag = True
-        print("Connected, return code=", rc)
+        client.subscribe(conf.of.client.subscribe_root_topic)
     else:
         client.bad_connection_flag = True
-        print("Bad connection, return code=", rc)
 
 
 def main():
@@ -135,8 +150,8 @@ def main():
     while not client.connected_flag:
         print("Waiting for connection")
         time.sleep(1)
-    client.subscribe(conf.of.client.subscribe_root_topic)
     client.publish(conf.of.client.publish_root_topic, "qr-code.png")
+
     print(str(conf.of.client.subscribe_root_topic))
     time.sleep(30)
     client.loop_stop()

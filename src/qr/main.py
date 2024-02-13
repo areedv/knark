@@ -41,7 +41,7 @@ conf = KnarkConfig(args.config_file)
 
 
 def on_log(client, userdata, level, buf):
-    print("Log: ", buf)
+    print("LOG: ", buf)
 
 
 def topic_stream(topic):
@@ -69,13 +69,24 @@ def on_message(client, userdata, message):
         return res
 
     payload = str(message.payload.decode("utf-8"))
-    print("Now on_message")
-    print("Message is: " + payload)
+    camera = topic_stream(message.topic)
+    stream_url = conf.of.client.video_stream_base_url + camera
+    # print("Now on_message")
+    # print("Message is: " + payload)
+    # print("Camera is: " + camera)
     if payload == "OFF":
-        print(q.get())
-
+        if camera in client.streams:
+            stream = client.streams.pop(camera)
+            print("Closing and removing stream: ", stream)
+        else:
+            print("Cannot remove stream that does not exist")
     if payload == "ON":
-        print(q.put("Testing"))
+        if camera in client.streams:
+            print("Cannot add stream that is currently streaming")
+        else:
+            client.streams[camera] = stream_url
+            print("Opening stream on ", camera)
+            print("Current stream(s):", client.streams)
 
     res = qr_decode(str(message.payload.decode("utf-8")))
     for qr in res:
@@ -102,17 +113,19 @@ def main():
     Main entrypoint for client
     """
     # args = process_cmdargs()
-    # mqtt.Client.connected_flag: bool = False
-    # mqtt.Client.bad_connection_flag=False
+    mqtt.Client.connected_flag = False
+    mqtt.Client.bad_connection_flag = False
+    mqtt.Client.streams = {}
     client = mqtt.Client(conf.of.client.id)
 
-    setattr(client, "connected_flag", False)
-    setattr(client, "bad_connection_flag", False)
+    # setattr(client, "connected_flag", False)
+    # setattr(client, "bad_connection_flag", False)
 
     # client = mqtt.Client(conf.of.client.id)
     client.on_log = on_log
     client.on_connect = on_connect
     client.on_message = on_message
+    client.loop_start()
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     except:
@@ -122,11 +135,10 @@ def main():
     while not client.connected_flag:
         print("Waiting for connection")
         time.sleep(1)
-    client.loop_start()
     client.subscribe(conf.of.client.subscribe_root_topic)
     client.publish(conf.of.client.publish_root_topic, "qr-code.png")
     print(str(conf.of.client.subscribe_root_topic))
-    time.sleep(20)
+    time.sleep(30)
     client.loop_stop()
 
     # print("DEFAULT_CONFIG: " + str(DEFAULT_CONFIG))

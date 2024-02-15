@@ -9,6 +9,7 @@ from pyzbar.pyzbar import decode
 class KnarkVideoStream:
     def __init__(self, src=0):
         self.stream = cv.VideoCapture(src)
+        self.isOpened = self.stream.isOpened()
         (self.grabbed, self.frame) = self.stream.read()
 
         self.stopped = False
@@ -23,11 +24,17 @@ class KnarkVideoStream:
                 return
             (self.grabbed, self.frame) = self.stream.read()
 
+    def isOpened(self):
+        return self.isOpened
+
     def read(self):
-        return self.frame
+        return (self.grabbed, self.frame)
 
     def stop(self):
         self.stopped = True
+
+    def is_stopped(self):
+        return self.stopped
 
 
 def capture_stream(stream_url):
@@ -74,6 +81,23 @@ def scan_stream(cap_obj):
 
         cv.imshow("Barcode scanner", frame)
         cv.waitKey(200)
+
+
+def simplestream(vs):
+    # vs = KnarkVideoStream(src).start()
+    while not vs.is_stopped():
+        ret, frame = vs.read()
+        if not ret:
+            break
+        frame = imutils.resize(frame, width=1200)
+        cv.imshow("Frame", frame)
+        key = cv.waitKey(1) & 0xFF
+        if key == ord("q"):
+            break
+
+    key = None
+    cv.destroyAllWindows()
+    vs.stop()
 
 
 def main():

@@ -2,7 +2,9 @@ client:
   id: knark_mvp
   subscribe_root_topic: knark/nvr/+/motion
   publish_root_topic: knark/qr
-  video_stream_base_url: rtsp://localhost:8554
+  video_stream_base_url: rtsp://localhost:8554/
+  #video_stream_base_url: http://localhost:1984/stream.html&source=
+
 mqtt:
   host: localhost
   port: 1884

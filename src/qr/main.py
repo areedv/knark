@@ -3,6 +3,7 @@ Client interface to :class: KnarkConfig class
 """
 
 import argparse
+import threading
 import time
 from queue import Queue
 
@@ -15,8 +16,7 @@ from pyzbar.pyzbar import decode
 
 from conf import KnarkConfig
 from cons import DEFAULT_CONFIG, DEFAULT_CONFIG_FILE
-
-# from qr import KnarkQrDecode
+from streamcap import KnarkVideoStream, simplestream
 
 
 def process_cmdargs():
@@ -38,6 +38,7 @@ def process_cmdargs():
 
 
 q = Queue()
+exit_worker = threading.Event()
 args = process_cmdargs()
 conf = KnarkConfig(args.config_file)
 
@@ -95,11 +96,14 @@ def on_message(client, userdata, message):
 
     payload = str(message.payload.decode("utf-8"))
     camera = topic_stream(message.topic)
+    # stream_url = conf.of.client.video_stream_base_url + camera + "&mode=webrtc"
     stream_url = conf.of.client.video_stream_base_url + camera
     # print("Now on_message")
     # print("Message is: " + payload)
     # prWint("Camera is: " + camera)
+    q.put({"stream_url": stream_url, "payload": payload})
     if payload == "OFF":
+
         if camera in client.streams:
             stream = client.streams.pop(camera)
             print("Closing and removing stream: ", stream)
@@ -112,7 +116,7 @@ def on_message(client, userdata, message):
             client.streams[camera] = stream_url
             print("Opening stream on ", camera)
             print("Current stream(s):", client.streams)
-            scanner(client, camera)
+            # scanner(client, camera)
 
 
 def on_connect(client, userdata, flags, rc):
@@ -123,10 +127,50 @@ def on_connect(client, userdata, flags, rc):
         client.bad_connection_flag = True
 
 
+def worker():
+    global stream_instances
+    stream_instances = {}
+    while True:
+        if not q.empty():
+            data = q.get()
+            stream_url = data["stream_url"]
+            payload = data["payload"]
+            if payload == "ON":
+                # event_exit = threading.Event()
+                vs = KnarkVideoStream(stream_url).start()
+                thread = threading.Thread(target=simplestream, args=(vs,))
+                stream_instances[stream_url] = [vs, thread]
+                stream_instances[stream_url][1].start()
+                # vs = KnarkVideoStream(stream_url).start()
+                # stream_instances[stream_url] = vs
+                # while True:
+                #     frame = vs.read()
+                #     frame = imutils.resize(frame, width=1200)
+                #     cv2.imshow("Frame", frame)
+                #     key = cv2.waitKey(1) & 0xFF
+                #     if key == ord("q"):
+                #         break
+                # cv2.destroyAllWindows()
+
+            if payload == "OFF":
+                print("Now in OFFFFFFFFFFFFF")
+                instance = stream_instances.pop(stream_url)
+                instance[0].stop()
+                instance[1].join()
+            print("All instances", str(stream_instances))
+
+        if exit_worker.is_set():
+            break
+
+
 def main():
     """
     Main entrypoint for client
     """
+
+    t = threading.Thread(target=worker)
+    t.start()
+
     # args = process_cmdargs()
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
@@ -153,7 +197,11 @@ def main():
     client.publish(conf.of.client.publish_root_topic, "qr-code.png")
 
     print(str(conf.of.client.subscribe_root_topic))
-    time.sleep(30)
+    time.sleep(60)
+
+    exit_worker.set()
+    t.join()
+
     client.loop_stop()
 
     # print("DEFAULT_CONFIG: " + str(DEFAULT_CONFIG))

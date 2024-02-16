@@ -22,7 +22,6 @@ def process_cmdargs():
     :return: Processed parameters
     :rtype: argparse.Namespace
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c",
@@ -79,17 +78,11 @@ def worker():
             stream_url = data["stream_url"]
             payload = data["payload"]
             if payload == "ON":
-                # event_exit = threading.Event()
-                vs = KnarkVideoStream(stream_url).start()
-                thread = threading.Thread(target=simplestream, args=(vs,))
-                stream_instances[stream_url] = [vs, thread]
-                stream_instances[stream_url][1].start()
-
+                vs = KnarkVideoStream(stream_url).start_thread()
+                stream_instances[stream_url] = vs
             if payload == "OFF":
-                print("Now in OFFFFFFFFFFFFF")
                 instance = stream_instances.pop(stream_url)
-                instance[0].stop()
-                instance[1].join()
+                instance.stop()
             print("All instances", str(stream_instances))
 
         if exit_worker.is_set():

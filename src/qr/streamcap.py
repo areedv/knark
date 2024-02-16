@@ -9,23 +9,28 @@ from pyzbar.pyzbar import decode
 class KnarkVideoStream:
     def __init__(self, src=0):
         self.stream = cv.VideoCapture(src)
-        self.isOpened = self.stream.isOpened()
+        self._isOpened = self.stream.isOpened()
         (self.grabbed, self.frame) = self.stream.read()
 
         self.stopped = False
 
     def start(self):
+        self.update
+        return self
+
+    def start_thread(self):
         Thread(target=self.update, args=()).start()
         return self
 
     def update(self):
         while True:
             if self.stopped:
+                self.stream.release()
                 return
             (self.grabbed, self.frame) = self.stream.read()
 
     def isOpened(self):
-        return self.isOpened
+        return self._isOpened
 
     def read(self):
         return (self.grabbed, self.frame)
@@ -35,6 +40,9 @@ class KnarkVideoStream:
 
     def is_stopped(self):
         return self.stopped
+
+    def release(self):
+        self.stopped = True
 
 
 def capture_stream(stream_url):
@@ -90,13 +98,7 @@ def simplestream(vs):
         if not ret:
             break
         frame = imutils.resize(frame, width=1200)
-        cv.imshow("Frame", frame)
-        key = cv.waitKey(1) & 0xFF
-        if key == ord("q"):
-            break
 
-    key = None
-    cv.destroyAllWindows()
     vs.stop()
 
 

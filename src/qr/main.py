@@ -8,15 +8,10 @@ import threading
 import time
 from queue import Queue
 
-import cv2
-import imutils
 import paho.mqtt.client as mqtt
-from numpy import asarray
-from PIL import Image
-from pyzbar.pyzbar import decode
 
 from conf import KnarkConfig
-from cons import DEFAULT_CONFIG, DEFAULT_CONFIG_FILE
+from cons import DEFAULT_CONFIG_FILE
 from streamcap import KnarkVideoStream, simplestream
 
 

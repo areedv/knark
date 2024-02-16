@@ -70,20 +70,22 @@ def on_connect(client, userdata, flags, rc):
 
 
 def worker():
-    global stream_instances
-    stream_instances = {}
+    # global stream_instances
+    # stream_instances = {}
+    instances = threading.local()
+    instances.value = {}
     while True:
         if not q.empty():
             data = q.get()
             stream_url = data["stream_url"]
             payload = data["payload"]
             if payload == "ON":
-                vs = KnarkVideoStream(stream_url).start_thread()
-                stream_instances[stream_url] = vs
+                vs = KnarkVideoStream(stream_url).test_stream()
+                instances.value[stream_url] = vs
             if payload == "OFF":
-                instance = stream_instances.pop(stream_url)
+                instance = instances.value.pop(stream_url)
                 instance.stop()
-            print("All instances", str(stream_instances))
+            # print(f"All instances: {instances.value}")
 
         if exit_worker.is_set():
             break

@@ -44,6 +44,40 @@ class KnarkVideoStream:
     def release(self):
         self.stopped = True
 
+    def test_stream(self):
+        Thread(target=self._test_stream, args=()).start()
+        return self
+
+    def _test_stream(self):
+        found = set()
+        while True:
+            if self.stopped:
+                self.stream.release()
+                return
+            (self.grabbed, self.frame) = self.stream.read()
+            if not self.grabbed:
+                break
+            frame = imutils.resize(self.frame, width=1200)
+            barcodes = decode(frame)
+            for barcode in barcodes:
+                barcode_data = barcode.data.decode("utf-8")
+                barcode_type = barcode.type
+                if barcode_data not in found:
+                    (x, y, h, w) = barcode.rect
+                    cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                    text = "{} ({})".format(barcode_data, barcode_type)
+                    cv.putText(
+                        frame,
+                        text,
+                        (x, y - 10),
+                        cv.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 0, 255),
+                        2,
+                    )
+                    found.add(barcode_data)
+                    print(f"Found barcode {barcode_data} ({barcode_type})")
+
 
 def capture_stream(stream_url):
     cap_obj = cv.VideoCapture(stream_url)
@@ -98,8 +132,6 @@ def simplestream(vs):
         if not ret:
             break
         frame = imutils.resize(frame, width=1200)
-
-    vs.stop()
 
 
 def main():

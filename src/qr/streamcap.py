@@ -79,64 +79,9 @@ class KnarkVideoStream:
                     print(f"Found barcode {barcode_data} ({barcode_type})")
 
 
-def capture_stream(stream_url):
-    cap_obj = cv.VideoCapture(stream_url)
-    time.sleep(1)
-    if not cap_obj.isOpened():
-        print("Cannot open camera stream")
-        cap_obj = None
-
-    return cap_obj
-
-
-def release_stream(cap_obj):
-    cap_obj.release()
-
-
-def scan_stream(cap_obj):
-    found = set()
-
-    while running:
-        ret, frame = cap_obj.read()
-
-        if not ret:
-            print("Stream lost. Exiting")
-            break
-
-        frame = imutils.resize(frame, width=1200)
-        barcodes = decode(frame)
-        for barcode in barcodes:
-            (x, y, w, h) = barcode.rect
-            cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            # the barcode data is a bytes object so if we want to draw it
-            # on our output image we need to convert it to a string first
-            barcode_data = barcode.data.decode("utf-8")
-            barcode_type = barcode.type
-            # draw the barcode data and barcode type on the image
-            text = "{} ({})".format(barcode_data, barcode_type)
-            cv.putText(
-                frame, text, (x, y - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2
-            )
-            if barcode_data not in found:
-                # client.publish(conf.of.client.publish_root_topic, barcode_data)
-                found.add(barcode_data)
-
-        cv.imshow("Barcode scanner", frame)
-        cv.waitKey(200)
-
-
-def simplestream(vs):
-    # vs = KnarkVideoStream(src).start()
-    while not vs.is_stopped():
-        ret, frame = vs.read()
-        if not ret:
-            break
-        frame = imutils.resize(frame, width=1200)
-
-
 def main():
-
-    vs = KnarkVideoStream(src=1).start()
+    print("Press 'q' to quit and close video window.")
+    vs = KnarkVideoStream(src="rtsp://localhost:8554/cam0").start()
     while True:
         frame = vs.read()
         frame = imutils.resize(frame, width=1200)
@@ -147,18 +92,6 @@ def main():
 
     cv.destroyAllWindows()
     vs.stop()
-
-    # cap = capture_stream(0)
-    global running
-    # t0 = threading.Thread(target=scan_stream, args=(cap,))
-    running = True
-    # # scan_stream(cap)
-    # t0.start()
-    # time.sleep(5)
-    # running = False
-    # t0.join()
-    # release_stream(cap)
-    # print("are we done?")
 
 
 if __name__ == "__main__":

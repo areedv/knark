@@ -12,7 +12,7 @@ import paho.mqtt.client as mqtt
 
 from conf import KnarkConfig
 from cons import DEFAULT_CONFIG_FILE
-from streamcap import KnarkVideoStream, simplestream
+from streamcap import KnarkVideoStream
 
 
 def process_cmdargs():
@@ -54,7 +54,6 @@ def topic_stream(topic):
 
 
 def on_message(client, userdata, message):
-
     payload = str(message.payload.decode("utf-8"))
     camera = topic_stream(message.topic)
     stream_url = conf.of.client.video_stream_base_url + camera
@@ -70,8 +69,6 @@ def on_connect(client, userdata, flags, rc):
 
 
 def worker():
-    # global stream_instances
-    # stream_instances = {}
     instances = threading.local()
     instances.value = {}
     while True:
@@ -80,12 +77,14 @@ def worker():
             stream_url = data["stream_url"]
             payload = data["payload"]
             if payload == "ON":
+                print("Motion detected!")
                 vs = KnarkVideoStream(stream_url).test_stream()
                 instances.value[stream_url] = vs
             if payload == "OFF":
+                print("Stopped detecting motion!")
                 instance = instances.value.pop(stream_url)
                 instance.stop()
-            # print(f"All instances: {instances.value}")
+            print(f"All instances: {instances.value}")
 
         if exit_worker.is_set():
             break
@@ -110,14 +109,14 @@ def main():
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     except:
-        print("Connection failed")
+        print("Connection failed: ")
         exit(1)
 
     while not client.connected_flag:
         print("Waiting for connection")
         time.sleep(1)
 
-    time.sleep(60)
+    time.sleep(180)
 
     exit_worker.set()
     t.join()

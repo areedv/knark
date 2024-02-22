@@ -68,7 +68,7 @@ def on_connect(client, userdata, flags, rc):
         client.bad_connection_flag = True
 
 
-def worker():
+def worker(conf):
     instances = threading.local()
     instances.value = {}
     while True:
@@ -78,13 +78,16 @@ def worker():
             payload = data["payload"]
             if payload == "ON":
                 print("Motion detected!")
-                vs = KnarkVideoStream(stream_url).test_stream()
+                vs = KnarkVideoStream(stream_url).scan(conf)
                 instances.value[stream_url] = vs
             if payload == "OFF":
                 print("Stopped detecting motion!")
-                instance = instances.value.pop(stream_url)
-                instance.stop()
-            print(f"All instances: {instances.value}")
+                if stream_url in instances.value:
+                    instance = instances.value.pop(stream_url)
+                    instance.stop()
+                else:
+                    print("Skipping None-existing instance")
+            # print(f"All instances: {instances.value}")
 
         if exit_worker.is_set():
             break
@@ -95,14 +98,14 @@ def main():
     Main entrypoint for client
     """
 
-    t = threading.Thread(target=worker)
+    t = threading.Thread(target=worker, args=(conf,))
     t.start()
 
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
     client = mqtt.Client(conf.of.client.id)
 
-    client.on_log = on_log
+    # client.on_log = on_log
     client.on_connect = on_connect
     client.on_message = on_message
     client.loop_start()

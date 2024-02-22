@@ -1,9 +1,9 @@
-import time
 from threading import Thread
 
 import cv2 as cv
 import imutils
-from pyzbar.pyzbar import decode
+from pylibdmtx import pylibdmtx
+from pyzbar import pyzbar
 
 
 class KnarkVideoStream:
@@ -44,12 +44,36 @@ class KnarkVideoStream:
     def release(self):
         self.stopped = True
 
-    def test_stream(self):
-        Thread(target=self._test_stream, args=()).start()
+    def scan(self, conf):
+        Thread(target=self._scan, args=(conf,)).start()
         return self
 
-    def _test_stream(self):
+    def _scan(self, conf):
+
+        def snapshot(path, frame, barcode_rect, barcode_data, barcode_type):
+            (x, y, h, w) = barcode_rect
+            cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            text = "{}\n{}".format(barcode_data, barcode_type)
+            cv.putText(
+                frame,
+                text,
+                (x, y - 10),
+                cv.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 255),
+                2,
+            )
+
+            return frame
+
         found = set()
+        scan_snapshot = conf.of.client.scan_snapshot
+        scan_barcode = conf.of.client.scan_barcode
+        scan_datamatrix = conf.of.client.scan_datamatrix
+        snapshot_file_prefix = conf.of.client.snapshot_file_prefix
+        snapshot_path = conf.of.client.snapshot_path
+        path = "test"
+
         while True:
             if self.stopped:
                 self.stream.release()
@@ -57,26 +81,33 @@ class KnarkVideoStream:
             (self.grabbed, self.frame) = self.stream.read()
             if not self.grabbed:
                 break
-            frame = imutils.resize(self.frame, width=1200)
-            barcodes = decode(frame)
-            for barcode in barcodes:
-                barcode_data = barcode.data.decode("utf-8")
-                barcode_type = barcode.type
-                if barcode_data not in found:
-                    (x, y, h, w) = barcode.rect
-                    cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                    text = "{} ({})".format(barcode_data, barcode_type)
-                    cv.putText(
-                        frame,
-                        text,
-                        (x, y - 10),
-                        cv.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        (0, 0, 255),
-                        2,
-                    )
-                    found.add(barcode_data)
-                    print(f"Found barcode {barcode_data} ({barcode_type})")
+            # frame = imutils.resize(self.frame, width=640)
+            frame = cv.cvtColor(self.frame, cv.COLOR_BGR2GRAY)
+            frame = cv.convertScaleAbs(frame, alpha=1.5, beta=10)
+            if scan_barcode:
+                barcodes = pyzbar.decode(frame)
+                for barcode in barcodes:
+                    barcode_data = barcode.data.decode("utf-8")
+                    barcode_type = barcode.type
+                    if barcode_data not in found:
+                        if scan_snapshot:
+                            snapshot(
+                                path, frame, barcode.rect, barcode_data, barcode_type
+                            )
+                        found.add(barcode_data)
+                        print(f"Found barcode {barcode_data} ({barcode_type})")
+            if scan_datamatrix:
+                barcodes = pylibdmtx.decode(frame, timeout=100, max_count=1)
+                for barcode in barcodes:
+                    barcode_data = barcode.data.decode("utf-8")
+                    barcode_type = "DataMatrix"
+                    if barcode_data not in found:
+                        if scan_snapshot:
+                            snapshot(
+                                path, frame, barcode.rect, barcode_data, barcode_type
+                            )
+                        found.add(barcode_data)
+                        print(f"Found barcode {barcode_data} ({barcode_type})")
 
 
 def main():

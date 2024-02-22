@@ -30,7 +30,7 @@ args = vars(ap.parse_args())
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
-vs = cv2.VideoCapture(0)
+vs = cv2.VideoCapture("rtsp://localhost:8554/cam0")
 # vs = VideoStream(src=0).start()
 # vs = VideoStream(usePiCamera=True).start()
 time.sleep(2.0)

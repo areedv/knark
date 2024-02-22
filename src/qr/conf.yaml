@@ -4,10 +4,15 @@ client:
   publish_root_topic: knark/qr
   video_stream_base_url: rtsp://localhost:8554/
   #video_stream_base_url: http://localhost:1984/stream.html&source=
+  scan_snapshot: False
+  scan_barcode: False
+  scan_datamatrix: True
+  snapshot_file_prefix: knark_mvp
+  snapshot_path: ./snapshot
 
 mqtt:
   host: localhost
-  port: 1884
+  port: 1883
   username: are
   password: test123
 

@@ -24,6 +24,11 @@ class KnarkConfig:
                     "subscribe_root_topic": str,
                     "publish_root_topic": str,
                     "video_stream_base_url": str,
+                    "scan_snapshot": bool,
+                    "scan_barcode": bool,
+                    "scan_datamatrix": bool,
+                    "snapshot_file_prefix": str,
+                    "snapshot_path": str,
                 },
                 "mqtt": {
                     "host": str,

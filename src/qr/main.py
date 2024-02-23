@@ -68,6 +68,13 @@ def on_connect(client, userdata, flags, rc):
         client.bad_connection_flag = True
 
 
+def on_disconnect(client, userdata, rc=0):
+    print("Disconnecting ;-o")
+    # logging.debug("DisConnected result code " + str(rc))
+    exit_worker.set()
+    client.loop_stop()
+
+
 def worker(conf):
     instances = threading.local()
     instances.value = {}
@@ -108,6 +115,7 @@ def main():
     # client.on_log = on_log
     client.on_connect = on_connect
     client.on_message = on_message
+    client.on_disconnect = on_disconnect
     client.loop_start()
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
@@ -119,12 +127,12 @@ def main():
         print("Waiting for connection")
         time.sleep(1)
 
-    time.sleep(180)
-
-    exit_worker.set()
-    t.join()
-
-    client.loop_stop()
+    # time.sleep(180)
+    #
+    # exit_worker.set()
+    # t.join()
+    #
+    # client.loop_stop()
 
 
 if __name__ == "__main__":

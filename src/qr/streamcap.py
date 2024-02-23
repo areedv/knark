@@ -51,7 +51,7 @@ class KnarkVideoStream:
     def _scan(self, conf):
 
         def snapshot(path, frame, barcode_rect, barcode_data, barcode_type):
-            (x, y, h, w) = barcode_rect
+            (x, y, w, h) = barcode_rect
             cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
             text = "{}\n{}".format(barcode_data, barcode_type)
             cv.putText(
@@ -64,7 +64,8 @@ class KnarkVideoStream:
                 2,
             )
 
-            return frame
+            filename = "testfile.png"
+            cv.imwrite(filename, frame)
 
         found = set()
         scan_snapshot = conf.of.client.scan_snapshot
@@ -72,7 +73,6 @@ class KnarkVideoStream:
         scan_datamatrix = conf.of.client.scan_datamatrix
         snapshot_file_prefix = conf.of.client.snapshot_file_prefix
         snapshot_path = conf.of.client.snapshot_path
-        path = "test"
 
         while True:
             if self.stopped:
@@ -84,27 +84,39 @@ class KnarkVideoStream:
             # frame = imutils.resize(self.frame, width=640)
             frame = cv.cvtColor(self.frame, cv.COLOR_BGR2GRAY)
             frame = cv.convertScaleAbs(frame, alpha=1.5, beta=10)
+            height, width = frame.shape[:2]
+            # frame = (frame.tobytes(), width, height)
             if scan_barcode:
-                barcodes = pyzbar.decode(frame)
+                barcodes = pyzbar.decode((frame.tobytes(), width, height))
                 for barcode in barcodes:
                     barcode_data = barcode.data.decode("utf-8")
                     barcode_type = barcode.type
                     if barcode_data not in found:
                         if scan_snapshot:
                             snapshot(
-                                path, frame, barcode.rect, barcode_data, barcode_type
+                                snapshot_path,
+                                frame,
+                                barcode.rect,
+                                barcode_data,
+                                barcode_type,
                             )
                         found.add(barcode_data)
                         print(f"Found barcode {barcode_data} ({barcode_type})")
             if scan_datamatrix:
-                barcodes = pylibdmtx.decode(frame, timeout=100, max_count=1)
+                barcodes = pylibdmtx.decode(
+                    (frame.tobytes(), width, height), timeout=100, max_count=1
+                )
                 for barcode in barcodes:
                     barcode_data = barcode.data.decode("utf-8")
                     barcode_type = "DataMatrix"
                     if barcode_data not in found:
                         if scan_snapshot:
                             snapshot(
-                                path, frame, barcode.rect, barcode_data, barcode_type
+                                snapshot_path,
+                                frame,
+                                barcode.rect,
+                                barcode_data,
+                                barcode_type,
                             )
                         found.add(barcode_data)
                         print(f"Found barcode {barcode_data} ({barcode_type})")

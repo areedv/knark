@@ -1,0 +1,53 @@
+services:
+  go2rtc:
+    container_name: videoproxy
+    image: alexxit/go2rtc
+    privileged: true         # only for FFmpeg hardware transcoding
+    restart: unless-stopped  # autorestart on fail or config change from WebUI
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./go2rtc:/config   # folder for go2rtc.yaml file (edit from WebUI)
+    ports:
+      - "1984:1984"
+      - "8554:8554"
+
+  mosquitto:
+    container_name: mqtt
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    volumes:
+      - ./mqtt:/mosquitto/config
+      - knark-data:/mosquitto/data
+      - knark-data:/mosquitto/log
+    ports:
+      - "1883:1883" # For testing with client on host
+
+  frigate:
+    container_name: nvr
+    depends_on:
+      - go2rtc
+      - mosquitto
+    privileged: true # this may not be necessary for all setups
+    restart: unless-stopped
+    image: ghcr.io/blakeblackshear/frigate:stable
+    shm_size: "64mb" # update for your cameras based on calculation above
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./frigate/config.yml:/config/config.yml
+      - knark-data:/media/frigate
+      - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    ports:
+      # - "1884:1884" # mosquitto from host, for now
+      - "5000:5000" # frigate web ui
+      # - "8554:8553" # External RTSP
+      # - "8554:8554" # RTSP feeds
+      # - "8555:8555/tcp" # WebRTC over tcp
+      # - "8555:8555/udp" # WebRTC over udp
+    environment:
+      FRIGATE_RTSP_PASSWORD: "password"
+
+volumes:
+  knark-data:

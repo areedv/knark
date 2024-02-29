@@ -12,7 +12,7 @@ import paho.mqtt.client as mqtt
 
 from conf import KnarkConfig
 from cons import DEFAULT_CONFIG_FILE
-from streamcap import KnarkVideoStream
+from stream import KnarkVideoStream
 
 
 def process_cmdargs():

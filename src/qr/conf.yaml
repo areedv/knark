@@ -3,7 +3,6 @@ client:
   subscribe_root_topic: knark/nvr/+/motion
   publish_root_topic: knark/qr
   video_stream_base_url: rtsp://localhost:8554/
-  #video_stream_base_url: http://localhost:1984/stream.html&source=
   scan_snapshot: True
   scan_barcode: True
   scan_datamatrix: True

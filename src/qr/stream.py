@@ -50,8 +50,21 @@ class KnarkVideoStream:
 
     def _scan(self, conf):
 
-        def snapshot(path, frame, barcode_rect, barcode_data, barcode_type):
+        def snapshot(
+            path,
+            snapshot_file_prefix,
+            frame,
+            barcode_rect,
+            flip_height,
+            barcode_data,
+            barcode_type,
+        ):
+
             (x, y, w, h) = barcode_rect
+            # correct strange pylibdmtx height coordinate, if any
+            if flip_height > 0:
+                y = flip_height - y
+                h = -h
             cv.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
             text = "{}\n{}".format(barcode_data, barcode_type)
             cv.putText(
@@ -64,7 +77,7 @@ class KnarkVideoStream:
                 2,
             )
 
-            filename = "testfile.png"
+            filename = snapshot_file_prefix + "_testfile.png"
             cv.imwrite(filename, frame)
 
         found = set()
@@ -85,7 +98,6 @@ class KnarkVideoStream:
             frame = cv.cvtColor(self.frame, cv.COLOR_BGR2GRAY)
             frame = cv.convertScaleAbs(frame, alpha=1.5, beta=10)
             height, width = frame.shape[:2]
-            # frame = (frame.tobytes(), width, height)
             if scan_barcode:
                 barcodes = pyzbar.decode((frame.tobytes(), width, height))
                 for barcode in barcodes:
@@ -93,10 +105,14 @@ class KnarkVideoStream:
                     barcode_type = barcode.type
                     if barcode_data not in found:
                         if scan_snapshot:
+                            # do not flip height coorinate
+                            flip_height = 0
                             snapshot(
                                 snapshot_path,
+                                snapshot_file_prefix,
                                 frame,
                                 barcode.rect,
+                                flip_height,
                                 barcode_data,
                                 barcode_type,
                             )
@@ -104,17 +120,23 @@ class KnarkVideoStream:
                         print(f"Found barcode {barcode_data} ({barcode_type})")
             if scan_datamatrix:
                 barcodes = pylibdmtx.decode(
-                    (frame.tobytes(), width, height), timeout=100, max_count=1
+                    (frame.tobytes(), width, height),
+                    timeout=100,
+                    max_count=3,
                 )
                 for barcode in barcodes:
                     barcode_data = barcode.data.decode("utf-8")
                     barcode_type = "DataMatrix"
                     if barcode_data not in found:
                         if scan_snapshot:
+                            # fix reversed height coordinate
+                            flip_height = height
                             snapshot(
                                 snapshot_path,
+                                snapshot_file_prefix,
                                 frame,
                                 barcode.rect,
+                                flip_height,
                                 barcode_data,
                                 barcode_type,
                             )

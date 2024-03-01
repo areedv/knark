@@ -6,7 +6,7 @@ services:
     restart: unless-stopped  # autorestart on fail or config change from WebUI
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./go2rtc:/config   # folder for go2rtc.yaml file (edit from WebUI)
+      - ./appdata/videoproxy/config:/config   # folder for go2rtc.yaml file (edit from WebUI)
     ports:
       - "1984:1984"
       - "8554:8554"
@@ -16,9 +16,9 @@ services:
     image: eclipse-mosquitto
     restart: unless-stopped
     volumes:
-      - ./mqtt:/mosquitto/config
-      - knark-data:/mosquitto/data
-      - knark-data:/mosquitto/log
+      - ./appdata/mqtt/config:/mosquitto/config
+      - ./appdata/mqtt/data:/mosquitto/data
+      - ./appdata/mqtt/log:/mosquitto/log
     ports:
       - "1883:1883" # For testing with client on host
 
@@ -33,8 +33,8 @@ services:
     shm_size: "64mb" # update for your cameras based on calculation above
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./frigate/config.yml:/config/config.yml
-      - knark-data:/media/frigate
+      - ./appdata/nvr/config/config.yml:/config/config.yml
+      - ./appdata/nvr/media:/media/frigate
       - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
         target: /tmp/cache
         tmpfs:
@@ -49,5 +49,15 @@ services:
     environment:
       FRIGATE_RTSP_PASSWORD: "password"
 
-volumes:
-  knark-data:
+  knarkscan:
+    container_name: knarkscan
+    depends_on:
+      - go2rtc
+      - mosquitto
+      - frigate
+    restart: unless-stopped
+    image: areedv/knark
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./appdata/knarkscan/config:/config
+

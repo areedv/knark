@@ -1,12 +1,12 @@
 client:
-  id: knark_mvp
+  id: knarkscan
   subscribe_root_topic: knark/nvr/+/motion
-  publish_root_topic: knark/qr
+  publish_root_topic: knark/scan
   video_stream_base_url: rtsp://localhost:8554/
   scan_snapshot: True
   scan_barcode: True
   scan_datamatrix: True
-  snapshot_file_prefix: knark_mvp
+  snapshot_file_prefix: knarkscan
   snapshot_path: ./snapshot
 
 mqtt:

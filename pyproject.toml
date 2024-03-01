@@ -18,7 +18,7 @@ dependencies = [
 	"addict",
 	"argparse",
 	"paho-mqtt",
-	"opencv-python",
+	"opencv-python-headless",
 	"imutils",
 	"pylibdmtx",
 	"pyyaml",

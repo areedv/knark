@@ -1,0 +1,56 @@
+mqtt:
+  enabled: True
+  host: mqtt
+  port: 1883
+  user: are
+  password: test123
+  topic_prefix: knark/nvr
+
+cameras:
+  cam0:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://videoproxy:8554/cam0
+          roles:
+            - record
+      hwaccel_args: preset-vaapi
+    detect:
+      enabled: False
+      width: 640
+      height: 480
+  
+  cam1:
+    enabled: False
+    ffmpeg:
+      inputs:
+        - path: rtsp://videoproxy:8554/ir
+          roles:
+            - record
+      hwaccel_args: preset-vaapi
+    detect:
+      enabled: False
+
+birdseye:
+  enabled: True
+  mode: continuous
+
+detect:
+  enabled: True
+
+motion:
+  mqtt_off_delay: 5
+
+# General settings for all cameras
+record:
+  # Store video containing motion for 3 days
+  enabled: True
+  retain:
+    days: 3
+    mode: motion
+  events:
+    # Motion recordings with events (classified objects and sounds) will be kept for 30 days
+    retain:
+      default: 30
+      mode: motion
+

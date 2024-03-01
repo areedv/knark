@@ -9,7 +9,6 @@ import time
 from queue import Queue
 
 import paho.mqtt.client as mqtt
-
 from conf import KnarkConfig
 from cons import DEFAULT_CONFIG_FILE
 from stream import KnarkVideoStream
@@ -58,11 +57,13 @@ def on_message(client, userdata, message):
     camera = topic_stream(message.topic)
     stream_url = conf.of.client.video_stream_base_url + camera
     q.put({"stream_url": stream_url, "payload": payload})
+    print(f"Got payload {payload} on topic {message.topic}")
 
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         client.connected_flag = True
+        print("Client connected :-)")
         client.subscribe(conf.of.client.subscribe_root_topic)
     else:
         client.bad_connection_flag = True
@@ -110,7 +111,8 @@ def main():
 
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
-    client = mqtt.Client(conf.of.client.id)
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+    # client = mqtt.Client(conf.of.client.id)
 
     # client.on_log = on_log
     client.on_connect = on_connect

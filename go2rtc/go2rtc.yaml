@@ -1,0 +1,4 @@
+streams:
+    cam1: ffmpeg:device?video=/dev/video0&input_format=yuyv422&video_size=640x360#video=h264#hardware
+    ir: ffmpeg:device?video=/dev/video2&input_format=gray&video_size=640x360#video=h264#hardware
+    cam0: ffmpeg:device?video=/dev/video4&input_format=yuyv422&video_size=640x480#video=h264#hardware

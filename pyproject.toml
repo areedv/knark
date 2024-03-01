@@ -3,10 +3,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "knark"
+name = "knarkscan"
 version = "0.0.1.9000"
 authors = [{ name = "Are Edvardsen", email = "are.edvardsen@hnikt.no" }]
-description = "Scan and decode barcode from image streams"
+description = "Scan and decode barcode from image stream"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -15,15 +15,15 @@ classifiers = [
 	"Operating System :: OS Independent",
 ]
 dependencies = [
+	"addict",
 	"argparse",
-	"threading",
-	"time",
-	"queue",
-	"paho.mqtt.client",
-	"cv2",
+	"paho-mqtt",
+	"opencv-python",
 	"imutils",
 	"pylibdmtx",
+	"pyyaml",
 	"pyzbar",
+	"schema",
 ]
 
 [project.urls]
@@ -31,4 +31,4 @@ Homepage = "https://github.com/areedv/knark"
 Issues = "https://github.com/areedv/knark/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/barcode"]
+packages = ["knarkscan"]

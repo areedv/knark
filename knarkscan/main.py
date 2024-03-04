@@ -60,8 +60,8 @@ def on_message(client, userdata, message):
     print(f"Got payload {payload} on topic {message.topic}")
 
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
+def on_connect(client, userdata, flags, reason_code, properties):
+    if reason_code == 0:
         client.connected_flag = True
         print("Client connected :-)")
         client.subscribe(conf.of.client.subscribe_root_topic)
@@ -69,7 +69,7 @@ def on_connect(client, userdata, flags, rc):
         client.bad_connection_flag = True
 
 
-def on_disconnect(client, userdata, rc=0):
+def on_disconnect(client, userdata, flags, reason_code, properties):
     print("Disconnecting ;-o")
     # logging.debug("DisConnected result code " + str(rc))
     exit_worker.set()
@@ -111,7 +111,10 @@ def main():
 
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+    client = mqtt.Client(
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+        client_id=conf.of.client.id,
+    )
     # client = mqtt.Client(conf.of.client.id)
 
     # client.on_log = on_log
@@ -121,20 +124,19 @@ def main():
     client.loop_start()
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
-    except:
-        print("Connection failed: ")
+    except Exception as e:
+        print(f"Connection failed: {e}")
         exit(1)
 
     while not client.connected_flag:
         print("Waiting for connection")
         time.sleep(1)
 
-    # time.sleep(180)
-    #
-    # exit_worker.set()
-    # t.join()
-    #
-    # client.loop_stop()
+    # client.loop_start()
+    time.sleep(180)
+    exit_worker.set()
+    t.join()
+    client.loop_stop()
 
 
 if __name__ == "__main__":

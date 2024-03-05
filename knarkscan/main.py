@@ -54,10 +54,14 @@ def topic_stream(topic):
 
 def on_message(client, userdata, message):
     payload = str(message.payload.decode("utf-8"))
-    camera = topic_stream(message.topic)
-    stream_url = conf.of.client.video_stream_base_url + camera
-    q.put({"stream_url": stream_url, "payload": payload})
-    print(f"Got payload {payload} on topic {message.topic}")
+    if message.topic == conf.of.client.subscribe_admin_topic:
+        q.put({"stream_url": "admin", "payload": payload, "cam": None})
+    else:
+        camera = topic_stream(message.topic)
+        stream_url = conf.of.client.video_stream_base_url + camera
+        q.put({"stream_url": stream_url, "payload": payload, "cam": camera})
+        # print(f"Got payload {payload} on topic {message.topic}")
+        client.publish(conf.of.client.publish_root_topic, f"{camera} said '{payload}'")
 
 
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -65,6 +69,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
         client.connected_flag = True
         print("Client connected :-)")
         client.subscribe(conf.of.client.subscribe_root_topic)
+        client.subscribe(conf.of.client.subscribe_admin_topic)
     else:
         client.bad_connection_flag = True
 
@@ -76,29 +81,30 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
     client.loop_stop()
 
 
-def worker(conf):
+def worker(conf, client):
     instances = threading.local()
     instances.value = {}
     while True:
+        if exit_worker.is_set():
+            break
         if not q.empty():
             data = q.get()
             stream_url = data["stream_url"]
             payload = data["payload"]
+            cam = data["cam"]
             if payload == "ON":
-                print("Motion detected!")
-                vs = KnarkVideoStream(stream_url).scan(conf)
+                # print("Motion detected!")
+                vs = KnarkVideoStream(stream_url, client).scan(conf, cam)
                 instances.value[stream_url] = vs
             if payload == "OFF":
-                print("Stopped detecting motion!")
+                # print("Stopped detecting motion!")
                 if stream_url in instances.value:
                     instance = instances.value.pop(stream_url)
                     instance.stop()
                 else:
                     print("Skipping None-existing instance")
-            # print(f"All instances: {instances.value}")
-
-        if exit_worker.is_set():
-            break
+            if payload == "STOP" and stream_url == "admin":
+                client.disconnect()
 
 
 def main():
@@ -106,22 +112,23 @@ def main():
     Main entrypoint for client
     """
 
-    t = threading.Thread(target=worker, args=(conf,))
-    t.start()
-
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
     client = mqtt.Client(
         callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
         client_id=conf.of.client.id,
     )
-    # client = mqtt.Client(conf.of.client.id)
+
+    t = threading.Thread(target=worker, args=(conf, client))
+    t.start()
 
     # client.on_log = on_log
     client.on_connect = on_connect
     client.on_message = on_message
     client.on_disconnect = on_disconnect
+
     client.loop_start()
+
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     except Exception as e:
@@ -132,11 +139,13 @@ def main():
         print("Waiting for connection")
         time.sleep(1)
 
-    # client.loop_start()
-    time.sleep(180)
-    exit_worker.set()
-    t.join()
-    client.loop_stop()
+    # client.loop_forever()
+    # time.sleep(60)
+    # exit_worker.set()
+    # t.join()
+    # client.loop_stop()
+    # client.disconnect()
+    #
 
 
 if __name__ == "__main__":

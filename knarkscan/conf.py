@@ -1,10 +1,9 @@
 import sys
 
+import cons
 import yaml
 from addict import Dict
 from schema import Optional, Schema, SchemaError
-
-import cons
 
 
 class KnarkConfig:
@@ -22,6 +21,7 @@ class KnarkConfig:
                 "client": {
                     "id": str,
                     "subscribe_root_topic": str,
+                    "subscribe_admin_topic": str,
                     "publish_root_topic": str,
                     "video_stream_base_url": str,
                     "scan_snapshot": bool,

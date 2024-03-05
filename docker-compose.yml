@@ -1,5 +1,5 @@
 services:
-  go2rtc:
+  videoproxy:
     container_name: videoproxy
     image: alexxit/go2rtc
     privileged: true         # only for FFmpeg hardware transcoding
@@ -11,7 +11,7 @@ services:
       - "1984:1984"
       - "8554:8554"
 
-  mosquitto:
+  mqtt:
     container_name: mqtt
     image: eclipse-mosquitto
     restart: unless-stopped
@@ -22,11 +22,11 @@ services:
     ports:
       - "1883:1883" # For testing with client on host
 
-  frigate:
+  nvr:
     container_name: nvr
     depends_on:
-      - go2rtc
-      - mosquitto
+      - videoproxy
+      - mqtt
     privileged: true # this may not be necessary for all setups
     restart: unless-stopped
     image: ghcr.io/blakeblackshear/frigate:stable
@@ -50,11 +50,11 @@ services:
       FRIGATE_RTSP_PASSWORD: "password"
 
   knarkscan:
-    container_name: knarkscan
+    container_name: knark
     depends_on:
-      - go2rtc
-      - mosquitto
-      - frigate
+      - videoproxy
+      - mqtt
+      - nvr
     restart: unless-stopped
     image: areedv/knark
     volumes:

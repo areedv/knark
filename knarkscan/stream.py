@@ -7,11 +7,12 @@ from pyzbar import pyzbar
 
 
 class KnarkVideoStream:
-    def __init__(self, src=0):
+    def __init__(self, src, mqtt_client):
         self.stream = cv.VideoCapture(src)
         self._isOpened = self.stream.isOpened()
         (self.grabbed, self.frame) = self.stream.read()
 
+        self.client = mqtt_client
         self.stopped = False
 
     def start(self):
@@ -44,11 +45,17 @@ class KnarkVideoStream:
     def release(self):
         self.stopped = True
 
-    def scan(self, conf):
-        Thread(target=self._scan, args=(conf,)).start()
+    def scan(self, conf, cam):
+        Thread(
+            target=self._scan,
+            args=(
+                conf,
+                cam,
+            ),
+        ).start()
         return self
 
-    def _scan(self, conf):
+    def _scan(self, conf, cam):
 
         def snapshot(
             path,
@@ -86,6 +93,7 @@ class KnarkVideoStream:
         scan_datamatrix = conf.of.client.scan_datamatrix
         snapshot_file_prefix = conf.of.client.snapshot_file_prefix
         snapshot_path = conf.of.client.snapshot_path
+        pub_topic = conf.of.client.publish_root_topic
 
         while True:
             if self.stopped:
@@ -117,7 +125,8 @@ class KnarkVideoStream:
                                 barcode_type,
                             )
                         found.add(barcode_data)
-                        print(f"Found barcode {barcode_data} ({barcode_type})")
+                        topic = f"{pub_topic}/{barcode_type}/{cam}"
+                        self.client.publish(topic, barcode_data)
             if scan_datamatrix:
                 barcodes = pylibdmtx.decode(
                     (frame.tobytes(), width, height),
@@ -141,7 +150,8 @@ class KnarkVideoStream:
                                 barcode_type,
                             )
                         found.add(barcode_data)
-                        print(f"Found barcode {barcode_data} ({barcode_type})")
+                        topic = f"{pub_topic}/dmtx/{cam}"
+                        self.client.publish(topic, barcode_data)
 
 
 def main():

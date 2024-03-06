@@ -4,6 +4,7 @@ KnarkVideoStream.
 """
 
 import argparse
+import logging
 import threading
 import time
 from queue import Queue
@@ -36,9 +37,17 @@ exit_worker = threading.Event()
 args = process_cmdargs()
 conf = KnarkConfig(args.config_file)
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 
 def on_log(client, userdata, level, buf):
-    print("LOG: ", buf)
+    logger.log(level, buf)
 
 
 def topic_stream(topic):
@@ -93,11 +102,11 @@ def worker(conf, client):
             payload = data["payload"]
             cam = data["cam"]
             if payload == "ON":
-                # print("Motion detected!")
+                logger.info("Motion detected!")
                 vs = KnarkVideoStream(stream_url, client).scan(conf, cam)
                 instances.value[stream_url] = vs
             if payload == "OFF":
-                # print("Stopped detecting motion!")
+                logger.info("Stopped detecting motion!")
                 if stream_url in instances.value:
                     instance = instances.value.pop(stream_url)
                     instance.stop()
@@ -111,6 +120,17 @@ def main():
     """
     Main entrypoint for client
     """
+    # logger = logging.getLogger(__name__)
+    # logger.setLevel(logging.INFO)
+    # ch = logging.StreamHandler()
+    # ch.setLevel(logging.INFO)
+    # formatter = logging.Formatter(
+    #     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    # )
+    # ch.setFormatter(formatter)
+    # logger.addHandler(ch)
+
+    logger.info("Start scanning for knark")
 
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
@@ -122,7 +142,7 @@ def main():
     t = threading.Thread(target=worker, args=(conf, client))
     t.start()
 
-    # client.on_log = on_log
+    client.on_log = on_log
     client.on_connect = on_connect
     client.on_message = on_message
     client.on_disconnect = on_disconnect

@@ -1,3 +1,4 @@
+import logging
 from threading import Thread
 
 import cv2 as cv
@@ -12,6 +13,7 @@ class KnarkVideoStream:
         self._isOpened = self.stream.isOpened()
         (self.grabbed, self.frame) = self.stream.read()
 
+        self.logger = logging.getLogger(__name__)
         self.client = mqtt_client
         self.stopped = False
 
@@ -150,6 +152,7 @@ class KnarkVideoStream:
                                 barcode_type,
                             )
                         found.add(barcode_data)
+                        self.logger.info(f"Found {barcode_type}: {barcode_data}")
                         topic = f"{pub_topic}/dmtx/{cam}"
                         self.client.publish(topic, barcode_data)
 

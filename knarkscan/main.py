@@ -37,16 +37,17 @@ exit_worker = threading.Event()
 args = process_cmdargs()
 conf = KnarkConfig(args.config_file)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = logging.getLogger("knarkscan")
+logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
 def on_log(client, userdata, level, buf):
+    print(f"MQTTC-LOG: {buf}, level: {level}")
     logger.log(level, buf)
 
 
@@ -76,7 +77,7 @@ def on_message(client, userdata, message):
 def on_connect(client, userdata, flags, reason_code, properties):
     if reason_code == 0:
         client.connected_flag = True
-        print("Client connected :-)")
+        logger.info("Client connected")
         client.subscribe(conf.of.client.subscribe_root_topic)
         client.subscribe(conf.of.client.subscribe_admin_topic)
     else:
@@ -84,7 +85,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 
 def on_disconnect(client, userdata, flags, reason_code, properties):
-    print("Disconnecting ;-o")
+    logger.info("Disconnecting")
     # logging.debug("DisConnected result code " + str(rc))
     exit_worker.set()
     client.loop_stop()
@@ -111,7 +112,7 @@ def worker(conf, client):
                     instance = instances.value.pop(stream_url)
                     instance.stop()
                 else:
-                    print("Skipping None-existing instance")
+                    logger.debug("Skipping None-existing instance")
             if payload == "STOP" and stream_url == "admin":
                 client.disconnect()
 
@@ -152,11 +153,11 @@ def main():
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     except Exception as e:
-        print(f"Connection failed: {e}")
+        logger.error(f"Connection failed: {e}")
         exit(1)
 
     while not client.connected_flag:
-        print("Waiting for connection")
+        logger.info("Waiting for connection")
         time.sleep(1)
 
     # client.loop_forever()

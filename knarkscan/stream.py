@@ -87,6 +87,7 @@ class KnarkVideoStream:
             )
 
             filename = snapshot_file_prefix + "_testfile.png"
+            self.logger.debug(f"Snapshot written to {filename}")
             cv.imwrite(filename, frame)
 
         found = set()
@@ -127,7 +128,9 @@ class KnarkVideoStream:
                                 barcode_type,
                             )
                         found.add(barcode_data)
-                        self.logger.info(f"Found {barcode_type}: {barcode_data}")
+                        self.logger.debug(
+                            f"Found {barcode_type} on {cam}: {barcode_data}"
+                        )
                         topic = f"{pub_topic}/{barcode_type}/{cam}"
                         self.client.publish(topic, barcode_data)
             if scan_datamatrix:
@@ -153,7 +156,9 @@ class KnarkVideoStream:
                                 barcode_type,
                             )
                         found.add(barcode_data)
-                        self.logger.info(f"Found {barcode_type}: {barcode_data}")
+                        self.logger.debug(
+                            f"Found {barcode_type} on {cam}: {barcode_data}"
+                        )
                         topic = f"{pub_topic}/dmtx/{cam}"
                         self.client.publish(topic, barcode_data)
 

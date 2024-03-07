@@ -11,7 +11,7 @@ from queue import Queue
 
 import paho.mqtt.client as mqtt
 from conf import KnarkConfig
-from cons import DEFAULT_CONFIG_FILE
+from cons import DEFAULT_CONFIG_FILE, DEFAULT_LOG_LEVEL
 from stream import KnarkVideoStream
 
 
@@ -29,6 +29,14 @@ def process_cmdargs():
         default=DEFAULT_CONFIG_FILE,
         help="Path to configuration file (default: '%(default)s')",
     )
+
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        help="Set log level, one of "
+        + "NOTSET, DEBUG, INFO, WARNING, ERROR or CRITICAL. "
+        + "This argument overrides whatever set in the config file",
+    )
     return parser.parse_args()
 
 
@@ -36,18 +44,24 @@ q = Queue()
 exit_worker = threading.Event()
 args = process_cmdargs()
 conf = KnarkConfig(args.config_file)
-
+log_level = args.log_level
+log_level_source = "command line argument"
+if not log_level:
+    log_level = conf.of.client.log_level
+    log_level_source = args.config_file
+numeric_level = getattr(logging, log_level.upper(), None)
+if not isinstance(numeric_level, int):
+    raise ValueError(f"Invalid log level: '{log_level}' found in '{log_level_source}'")
 logger = logging.getLogger("knarkscan")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(numeric_level)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(numeric_level)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
 def on_log(client, userdata, level, buf):
-    print(f"MQTTC-LOG: {buf}, level: {level}")
     logger.log(level, buf)
 
 
@@ -65,13 +79,12 @@ def topic_stream(topic):
 def on_message(client, userdata, message):
     payload = str(message.payload.decode("utf-8"))
     if message.topic == conf.of.client.subscribe_admin_topic:
+        logger.debug(f"Got admin request '{payload}'")
         q.put({"stream_url": "admin", "payload": payload, "cam": None})
     else:
         camera = topic_stream(message.topic)
         stream_url = conf.of.client.video_stream_base_url + camera
         q.put({"stream_url": stream_url, "payload": payload, "cam": camera})
-        # print(f"Got payload {payload} on topic {message.topic}")
-        client.publish(conf.of.client.publish_root_topic, f"{camera} said '{payload}'")
 
 
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -86,7 +99,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 def on_disconnect(client, userdata, flags, reason_code, properties):
     logger.info("Disconnecting")
-    # logging.debug("DisConnected result code " + str(rc))
+    logger.debug(f"DisConnected reason code: '{str(reason_code)}'")
     exit_worker.set()
     client.loop_stop()
 
@@ -103,16 +116,18 @@ def worker(conf, client):
             payload = data["payload"]
             cam = data["cam"]
             if payload == "ON":
-                logger.info("Motion detected!")
+                logger.debug(f"Worker notified that motion started on {cam}")
                 vs = KnarkVideoStream(stream_url, client).scan(conf, cam)
                 instances.value[stream_url] = vs
+                logger.debug(f"Active threads: {threading.active_count()}")
             if payload == "OFF":
-                logger.info("Stopped detecting motion!")
+                logger.debug(f"Worker notified that motion ended  on {cam}")
                 if stream_url in instances.value:
                     instance = instances.value.pop(stream_url)
                     instance.stop()
                 else:
-                    logger.debug("Skipping None-existing instance")
+                    logger.debug("Worker skipped premature motion event")
+                logger.debug(f"Active threads: {threading.active_count()}")
             if payload == "STOP" and stream_url == "admin":
                 client.disconnect()
 
@@ -121,16 +136,6 @@ def main():
     """
     Main entrypoint for client
     """
-    # logger = logging.getLogger(__name__)
-    # logger.setLevel(logging.INFO)
-    # ch = logging.StreamHandler()
-    # ch.setLevel(logging.INFO)
-    # formatter = logging.Formatter(
-    #     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    # )
-    # ch.setFormatter(formatter)
-    # logger.addHandler(ch)
-
     logger.info("Start scanning for knark")
 
     mqtt.Client.connected_flag = False

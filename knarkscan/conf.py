@@ -29,6 +29,7 @@ class KnarkConfig:
                     "scan_datamatrix": bool,
                     "snapshot_file_prefix": str,
                     "snapshot_path": str,
+                    "log_level": str,
                 },
                 "mqtt": {
                     "host": str,

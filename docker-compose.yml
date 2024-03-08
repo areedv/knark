@@ -60,4 +60,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./appdata/knarkscan/config:/config
+      - ./appdata/knarkscan/snapshot:/snapshot
+    user: 1000:1000
+
 

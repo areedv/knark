@@ -1,4 +1,8 @@
 import logging
+import os
+import shutil
+import tempfile
+from datetime import datetime
 from threading import Thread
 
 import cv2 as cv
@@ -86,9 +90,15 @@ class KnarkVideoStream:
                 2,
             )
 
-            filename = snapshot_file_prefix + "_testfile.png"
-            self.logger.debug(f"Snapshot written to {filename}")
-            cv.imwrite(filename, frame)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            fn_prefix = f"{snapshot_file_prefix}_{timestamp}_"
+            (file_handle, file_path) = tempfile.mkstemp(
+                suffix=".png", prefix=fn_prefix, dir=path
+            )
+            self.logger.debug(f"Snapshot written to {file_path}")
+            cv.imwrite(file_path, frame)
+            base_dir = os.path.dirname(file_path)
+            shutil.copy(file_path, os.path.normpath(f"{base_dir}/current_snapshot.png"))
 
         found = set()
         scan_snapshot = conf.of.client.scan_snapshot

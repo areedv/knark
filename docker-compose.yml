@@ -40,12 +40,7 @@ services:
         tmpfs:
           size: 1000000000
     ports:
-      # - "1884:1884" # mosquitto from host, for now
       - "5000:5000" # frigate web ui
-      # - "8554:8553" # External RTSP
-      # - "8554:8554" # RTSP feeds
-      # - "8555:8555/tcp" # WebRTC over tcp
-      # - "8555:8555/udp" # WebRTC over udp
     environment:
       FRIGATE_RTSP_PASSWORD: "password"
 

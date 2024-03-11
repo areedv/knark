@@ -121,7 +121,7 @@ def worker(conf, client):
                 instances.value[stream_url] = vs
                 logger.debug(f"Active threads: {threading.active_count()}")
             if payload == "OFF":
-                logger.debug(f"Worker notified that motion ended  on {cam}")
+                logger.debug(f"Worker notified that motion ended on {cam}")
                 if stream_url in instances.value:
                     instance = instances.value.pop(stream_url)
                     instance.stop()

@@ -12,7 +12,7 @@ class KnarkQrDecode:
         Return image as nympy array.
         :return: Array of QR image to be decoded
         """
-        
+
         img = Image.open(image_file)
 
         return asarray(img)
@@ -30,17 +30,17 @@ class KnarkQrDecode:
     def qr_data(self):
         """The data property."""
         return self._decode[0].data
-        
+
     @property
     def qr_type(self):
         """The type property."""
         return self._decode[0].type
-        
+
     @property
     def qr_quality(self):
         """The quality property."""
         return self._decode[0].quality
-        
+
     @property
     def qr_orientation(self):
         """The orientation property."""

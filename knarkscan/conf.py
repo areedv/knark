@@ -1,6 +1,5 @@
 import sys
 
-import cons
 import yaml
 from addict import Dict
 from schema import Optional, Schema, SchemaError

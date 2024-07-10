@@ -3,6 +3,7 @@ from pyzbar.pyzbar import decode
 from PIL import Image
 from numpy import asarray
 
+
 class KnarkQrDecode:
     """docstring for KnarkQrDecode."""
 

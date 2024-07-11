@@ -1,4 +1,4 @@
-from cons import DEFAULT_CONFIG, DEFAULT_CONFIG_FILE, DEFAULT_LOG_LEVEL
+from knarkscan.cons import DEFAULT_CONFIG, DEFAULT_CONFIG_FILE, DEFAULT_LOG_LEVEL
 
 
 def test_constants():

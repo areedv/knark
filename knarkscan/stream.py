@@ -138,9 +138,7 @@ class KnarkVideoStream:
                                 barcode_type,
                             )
                         found.add(barcode_data)
-                        self.logger.debug(
-                            f"Found {barcode_type} on {cam}: {barcode_data}"
-                        )
+                        self.logger.debug(f"Found {barcode_type} on {cam}: {barcode_data}")
                         topic = f"{pub_topic}/{barcode_type}/{cam}"
                         self.client.publish(topic, barcode_data)
             if scan_datamatrix:

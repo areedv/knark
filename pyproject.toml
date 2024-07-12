@@ -32,3 +32,6 @@ Issues = "https://github.com/areedv/knark/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["knarkscan"]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]

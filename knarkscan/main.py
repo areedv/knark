@@ -11,7 +11,7 @@ from queue import Queue
 
 import paho.mqtt.client as mqtt
 from conf import KnarkConfig
-from cons import DEFAULT_CONFIG_FILE, DEFAULT_LOG_LEVEL
+from cons import DEFAULT_CONFIG_FILE
 from stream import KnarkVideoStream
 
 

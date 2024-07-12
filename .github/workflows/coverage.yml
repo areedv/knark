@@ -20,11 +20,9 @@ jobs:
               pip-compile --output-file=requirements.txt
               if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           - name: Coverage with pytest
-            run: pytest --cov-report xml:coverage.xml
+            run: pytest -v --cov-report xml:coverage.xml
           - name: Get Cover
-    
             uses: orgoro/coverage@v3.2
-            
             with:
                 coverageFile: ./coverage.xml
                 token: ${{ secrets.GITHUB_TOKEN }}

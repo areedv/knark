@@ -25,31 +25,14 @@ class KnarkVideoStream:
         self.update
         return self
 
-    def start_thread(self):
-        Thread(target=self.update, args=()).start()
-        return self
-
-    def update(self):
-        while True:
-            if self.stopped:
-                self.stream.release()
-                return
-            (self.grabbed, self.frame) = self.stream.read()
-
     def isOpened(self):
         return self._isOpened
-
-    def read(self):
-        return (self.grabbed, self.frame)
 
     def stop(self):
         self.stopped = True
 
     def is_stopped(self):
         return self.stopped
-
-    def release(self):
-        self.stopped = True
 
     def scan(self, conf, cam):
         Thread(
@@ -59,7 +42,6 @@ class KnarkVideoStream:
                 cam,
             ),
         ).start()
-        self.logger.debug(f"Scan class active threads: {active_count()}")
         return self
 
     def _scan(self, conf, cam):

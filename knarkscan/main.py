@@ -110,7 +110,7 @@ def worker(conf, client):
     logger.debug(f"worker: started with {threading.active_count()} threads")
     while True:
         if exit_worker.is_set():
-            logger.debug(f"worker: exit requested")
+            logger.debug("worker: exit requested")
             break
         if not q.empty():
             data = q.get()
@@ -154,7 +154,7 @@ def main():
         client_id=conf.of.client.id,
     )
 
-    logger.debug(f"main: Starting worker")
+    logger.debug("main: Starting worker")
     t = threading.Thread(target=worker, args=(conf, client))
     t.start()
     logger.debug(f"main: {threading.active_count()} active threads")
@@ -164,7 +164,7 @@ def main():
     client.on_message = on_message
     client.on_disconnect = on_disconnect
 
-    logger.debug(f"main: Starting MQ client loop")
+    logger.debug("main: Starting MQ client loop")
     client.loop_start()
     logger.debug(f"main: {threading.active_count()} active threads")
 

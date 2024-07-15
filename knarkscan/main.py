@@ -107,6 +107,7 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 def worker(conf, client):
     instances = threading.local()
     instances.value = {}
+    stop_request = False
     logger.debug(f"worker: started with {threading.active_count()} threads")
     while True:
         if exit_worker.is_set():
@@ -117,7 +118,7 @@ def worker(conf, client):
             stream_url = data["stream_url"]
             payload = data["payload"]
             cam = data["cam"]
-            if payload == "ON":
+            if payload == "ON" and not stop_request:
                 logger.debug(f"worker: Notified that motion started on {cam}")
                 logger.debug(
                     f"worker: {threading.active_count()} threads prior to scanning"
@@ -138,7 +139,13 @@ def worker(conf, client):
                 else:
                     logger.debug("worker: Skipped premature motion event")
             if payload == "STOP" and stream_url == "admin":
-                client.disconnect()
+                stop_request = True
+                logger.debug("worker: STOP requested, waiting for queue to empty")
+        if stop_request and len(instances.value) == 0:
+            logger.debug(
+                "worker: Queue empty, disconnecting MQ client after STOP request"
+            )
+            client.disconnect()
 
 
 def main():

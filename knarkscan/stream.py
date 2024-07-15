@@ -30,18 +30,20 @@ class KnarkVideoStream:
 
     def stop(self):
         self.stopped = True
+        self.thread.join()
 
     def is_stopped(self):
         return self.stopped
 
     def scan(self, conf, cam):
-        Thread(
+        self.thread = Thread(
             target=self._scan,
             args=(
                 conf,
                 cam,
             ),
-        ).start()
+        )
+        self.thread.start()
         return self
 
     def _scan(self, conf, cam):

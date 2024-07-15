@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 from datetime import datetime
-from threading import Thread, active_count
+from threading import Thread
 
 import cv2 as cv
 import imutils
@@ -94,7 +94,8 @@ class KnarkVideoStream:
         while True:
             if self.stopped:
                 self.stream.release()
-                return
+                # return
+                break
             (self.grabbed, self.frame) = self.stream.read()
             if not self.grabbed:
                 break

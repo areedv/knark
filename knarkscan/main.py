@@ -107,8 +107,10 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 def worker(conf, client):
     instances = threading.local()
     instances.value = {}
+    logger.debug(f"worker: started with {threading.active_count()} threads")
     while True:
         if exit_worker.is_set():
+            logger.debug(f"worker: exit requested")
             break
         if not q.empty():
             data = q.get()
@@ -116,18 +118,25 @@ def worker(conf, client):
             payload = data["payload"]
             cam = data["cam"]
             if payload == "ON":
-                logger.debug(f"Worker notified that motion started on {cam}")
+                logger.debug(f"worker: Notified that motion started on {cam}")
+                logger.debug(
+                    f"worker: {threading.active_count()} threads prior to scanning"
+                )
                 vs = KnarkVideoStream(stream_url, client).scan(conf, cam)
                 instances.value[stream_url] = vs
-                logger.debug(f"Active threads: {threading.active_count()}")
+                logger.debug(
+                    f"worker: {threading.active_count()} threads when scanning"
+                )
             if payload == "OFF":
-                logger.debug(f"Worker notified that motion ended on {cam}")
+                logger.debug(f"worker: Notified that motion ended on {cam}")
                 if stream_url in instances.value:
                     instance = instances.value.pop(stream_url)
                     instance.stop()
+                    logger.debug(
+                        f"worker: {threading.active_count()} threads after scannig stopped"
+                    )
                 else:
-                    logger.debug("Worker skipped premature motion event")
-                logger.debug(f"Active threads: {threading.active_count()}")
+                    logger.debug("worker: Skipped premature motion event")
             if payload == "STOP" and stream_url == "admin":
                 client.disconnect()
 
@@ -137,7 +146,7 @@ def main():
     Main entrypoint for client
     """
     logger.info("Start scanning for knark")
-
+    logger.debug(f"main: {threading.active_count()} active threads initially")
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
     client = mqtt.Client(
@@ -145,15 +154,19 @@ def main():
         client_id=conf.of.client.id,
     )
 
+    logger.debug(f"main: Starting worker")
     t = threading.Thread(target=worker, args=(conf, client))
     t.start()
+    logger.debug(f"main: {threading.active_count()} active threads")
 
     client.on_log = on_log
     client.on_connect = on_connect
     client.on_message = on_message
     client.on_disconnect = on_disconnect
 
+    logger.debug(f"main: Starting MQ client loop")
     client.loop_start()
+    logger.debug(f"main: {threading.active_count()} active threads")
 
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)

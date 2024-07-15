@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 from datetime import datetime
-from threading import Thread
+from threading import Thread, active_count
 
 import cv2 as cv
 import imutils
@@ -59,6 +59,7 @@ class KnarkVideoStream:
                 cam,
             ),
         ).start()
+        self.logger.debug(f"Scan class active threads: {active_count()}")
         return self
 
     def _scan(self, conf, cam):
@@ -138,7 +139,9 @@ class KnarkVideoStream:
                                 barcode_type,
                             )
                         found.add(barcode_data)
-                        self.logger.debug(f"Found {barcode_type} on {cam}: {barcode_data}")
+                        self.logger.debug(
+                            f"Found {barcode_type} on {cam}: {barcode_data}"
+                        )
                         topic = f"{pub_topic}/{barcode_type}/{cam}"
                         self.client.publish(topic, barcode_data)
             if scan_datamatrix:

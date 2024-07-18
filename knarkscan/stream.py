@@ -80,7 +80,7 @@ class KnarkVideoStream:
             (file_handle, file_path) = tempfile.mkstemp(
                 suffix=".png", prefix=fn_prefix, dir=path
             )
-            self.logger.debug(f"Snapshot written to {file_path}")
+            self.logger.debug(f"stream: Snapshot written to {file_path}")
             cv.imwrite(file_path, frame)
             base_dir = os.path.dirname(file_path)
             shutil.copy(file_path, os.path.normpath(f"{base_dir}/current_snapshot.png"))
@@ -125,7 +125,7 @@ class KnarkVideoStream:
                             )
                         found.add(barcode_data)
                         self.logger.debug(
-                            f"Found {barcode_type} on {cam}: {barcode_data}"
+                            f"stream: Found {barcode_type} on {cam}: {barcode_data}"
                         )
                         topic = f"{pub_topic}/{barcode_type}/{cam}"
                         self.client.publish(topic, barcode_data)
@@ -153,7 +153,7 @@ class KnarkVideoStream:
                             )
                         found.add(barcode_data)
                         self.logger.debug(
-                            f"Found {barcode_type} on {cam}: {barcode_data}"
+                            f"stream: Found {barcode_type} on {cam}: {barcode_data}"
                         )
                         topic = f"{pub_topic}/dmtx/{cam}"
                         self.client.publish(topic, barcode_data)

@@ -79,7 +79,7 @@ def topic_stream(topic):
 def on_message(client, userdata, message):
     payload = str(message.payload.decode("utf-8"))
     if message.topic == conf.of.client.subscribe_admin_topic:
-        logger.debug(f"Got admin request '{payload}'")
+        logger.debug(f"mqtt: Got admin request '{payload}'")
         q.put({"stream_url": "admin", "payload": payload, "cam": None})
     else:
         camera = topic_stream(message.topic)
@@ -90,7 +90,7 @@ def on_message(client, userdata, message):
 def on_connect(client, userdata, flags, reason_code, properties):
     if reason_code == 0:
         client.connected_flag = True
-        logger.info("Client connected")
+        logger.info("mqtt: Client connected")
         client.subscribe(conf.of.client.subscribe_root_topic)
         client.subscribe(conf.of.client.subscribe_admin_topic)
     else:
@@ -98,8 +98,8 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 
 def on_disconnect(client, userdata, flags, reason_code, properties):
-    logger.info("Disconnecting")
-    logger.debug(f"DisConnected reason code: '{str(reason_code)}'")
+    logger.info("mqtt: Disconnecting")
+    logger.debug(f"mqtt: Disconnected reason code: '{str(reason_code)}'")
     exit_worker.set()
     client.loop_stop()
 
@@ -108,10 +108,11 @@ def worker(conf, client):
     instances = threading.local()
     instances.value = {}
     stop_request = False
+    logger.info("worker: Starting")
     logger.debug(f"worker: started with {threading.active_count()} threads")
     while True:
         if exit_worker.is_set():
-            logger.debug("worker: exit requested")
+            logger.debug("worker: Exiting")
             break
         if not q.empty():
             data = q.get()
@@ -137,13 +138,13 @@ def worker(conf, client):
                         f"worker: {threading.active_count()} threads after scannig stopped"
                     )
                 else:
-                    logger.debug("worker: Skipped premature motion event")
+                    logger.warning("worker: Skipped motion event with unknowm onset")
             if payload == "STOP" and stream_url == "admin":
                 stop_request = True
-                logger.debug("worker: STOP requested, waiting for queue to empty")
+                logger.info("worker: STOP requested, waiting for queue to empty")
         if stop_request and len(instances.value) == 0:
             logger.debug(
-                "worker: Queue empty, disconnecting MQ client after STOP request"
+                "worker: Queue is now empty, requesting mqtt client disconnect"
             )
             client.disconnect()
 
@@ -152,7 +153,7 @@ def main():
     """
     Main entrypoint for client
     """
-    logger.info("Start scanning for knark")
+    logger.info("main: Start scanning for knark")
     logger.debug(f"main: {threading.active_count()} active threads initially")
     mqtt.Client.connected_flag = False
     mqtt.Client.bad_connection_flag = False
@@ -178,20 +179,14 @@ def main():
     try:
         client.connect(conf.of.mqtt.host, conf.of.mqtt.port)
     except Exception as e:
-        logger.error(f"Connection failed: {e}")
+        logger.error(f"main: Connection failed: {e}")
         exit(1)
 
     while not client.connected_flag:
-        logger.info("Waiting for connection")
-        time.sleep(1)
-
-    # client.loop_forever()
-    # time.sleep(60)
-    # exit_worker.set()
-    # t.join()
-    # client.loop_stop()
-    # client.disconnect()
-    #
+        sleep_secs = 1
+        logger.info("main: Waiting for connection")
+        logger.debug(f"main: Trying to reconnect after {sleep_secs} s")
+        time.sleep(sleep_secs)
 
 
 if __name__ == "__main__":

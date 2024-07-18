@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "knarkscan"
-version = "0.0.1.9000"
+version = "0.1.0"
 authors = [{ name = "Are Edvardsen", email = "are.edvardsen@hnikt.no" }]
 description = "Scan and decode barcode from image stream"
 readme = "README.md"

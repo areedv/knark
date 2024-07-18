@@ -51,7 +51,7 @@ services:
       - mqtt
       - nvr
     restart: unless-stopped
-    image: areedv/knark
+    image: ghcr.io/areedv/knark:main
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./appdata/knarkscan/config:/config

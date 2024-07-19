@@ -6,6 +6,8 @@ client:
   scan_snapshot: True
   scan_barcode: True
   scan_datamatrix: True
+  scan_datamatrix_timeout: 200
+  scan_datamatrix_max_count: 3
   snapshot_file_prefix: knarkscan
   snapshot_path: ./snapshot
 

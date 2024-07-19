@@ -26,6 +26,8 @@ class KnarkConfig:
                     "scan_snapshot": bool,
                     "scan_barcode": bool,
                     "scan_datamatrix": bool,
+                    "scan_datamatrix_max_count": int,
+                    "scan_datamatrix_timeout": int,
                     "snapshot_file_prefix": str,
                     "snapshot_path": str,
                     "log_level": str,

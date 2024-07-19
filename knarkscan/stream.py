@@ -89,6 +89,8 @@ class KnarkVideoStream:
         scan_snapshot = conf.of.client.scan_snapshot
         scan_barcode = conf.of.client.scan_barcode
         scan_datamatrix = conf.of.client.scan_datamatrix
+        scan_datamatrix_timeout = conf.of.client.scan_datamatrix_timeout
+        scan_datamatrix_max_count = conf.of.client.scan_datamatrix_max_count
         snapshot_file_prefix = conf.of.client.snapshot_file_prefix
         snapshot_path = conf.of.client.snapshot_path
         pub_topic = conf.of.client.publish_root_topic
@@ -133,8 +135,8 @@ class KnarkVideoStream:
             if scan_datamatrix:
                 barcodes = pylibdmtx.decode(
                     (frame.tobytes(), width, height),
-                    timeout=100,
-                    max_count=3,
+                    timeout=scan_datamatrix_timeout,
+                    max_count=scan_datamatrix_max_count,
                 )
                 for barcode in barcodes:
                     barcode_data = barcode.data.decode("utf-8")

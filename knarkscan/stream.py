@@ -103,7 +103,8 @@ class KnarkVideoStream:
                 break
             # frame = imutils.resize(self.frame, width=640)
             frame = cv.cvtColor(self.frame, cv.COLOR_BGR2GRAY)
-            frame = cv.convertScaleAbs(frame, alpha=1.5, beta=10)
+            frame = cv.threshold(frame, 128, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
+            # frame = cv.convertScaleAbs(frame, alpha=1.5, beta=10)
             height, width = frame.shape[:2]
             if scan_barcode:
                 barcodes = pyzbar.decode((frame.tobytes(), width, height))
